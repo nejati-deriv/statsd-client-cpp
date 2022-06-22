@@ -10,6 +10,8 @@ int main(void)
     statsd::StatsdClient client;
     statsd::StatsdClient client2("127.0.0.1", 8125, "myproject.abx.");
 
+    client.event({"An error occurred", "Error message", statsd::Event::Type::error, {"env:dev"}});
+
     client.count("count1", 123, 1.0);
     client.count("count2", 125, 1.0);
     client.gauge("speed", 10);

@@ -25,6 +25,69 @@
 using namespace std;
 namespace statsd {
 
+Event::Event(std::string title, std::string text, Event::Type type, tags_t tags)
+    : title_{title}
+    , text_{text}
+    , type_{type}
+    , tags_{tags}
+{}
+
+std::string Event::serialize() const
+{
+    std::string message;
+
+    const auto e_text = [&]{
+        std::string str;
+        for (const char c : text_)
+        {
+            if (c == '\n')
+                str.append("\\n");
+            else
+                str.push_back(c);
+        }
+        return str;
+    }();
+
+    message += "_e{" + std::to_string(title_.size()) + "," + std::to_string(e_text.size()) + "}:" + title_ + "|" + e_text;
+
+	if (timestamp_ != 0)
+        message += "|d:" + std::to_string(timestamp_);
+
+    if (hostname_ != "")
+        message += "|h:" + hostname_;
+
+    if (aggregation_Key_ != "")
+        message += "|k:" + aggregation_Key_;
+
+    switch (priority_)
+    {
+        case Priority::low:    message += "|p:low";    break;
+        case Priority::normal: message += "|p:normal"; break;
+    }
+
+    if (source_type_name_ != "")
+        message += "|s:" + source_type_name_;
+
+    switch (type_)
+    {
+        case Type::info:    message += "|t:info";    break;
+        case Type::success: message += "|t:success"; break;
+        case Type::warning: message += "|t:warning"; break;
+        case Type::error:   message += "|t:error";   break;
+    }
+
+    if (!tags_.empty()) {
+        message += "|#";
+        for(std::size_t i = 0, size = tags_.size(); i < size; ++i) {
+            message += tags_[i];
+            if (i < size - 1)
+                message += ",";
+        }
+    }
+
+    return message;
+}
+
 inline bool fequal(float a, float b)
 {
     const float epsilon = 0.0001;
@@ -162,6 +225,11 @@ int StatsdClient::gauge(const string& key, size_t value, float sample_rate, tags
 int StatsdClient::timing(const string& key, size_t ms, float sample_rate, tags_t tags)
 {
     return send(key, ms, "ms", sample_rate, tags);
+}
+
+int StatsdClient::event(const Event& event)
+{
+    return send(event.serialize());
 }
 
 int StatsdClient::send(string key, size_t value, const string &type, float sample_rate, tags_t tags)

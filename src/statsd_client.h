@@ -9,6 +9,45 @@
 
 namespace statsd {
 
+class Event{
+    public:
+        enum class Type{
+            info,
+            success,
+            warning,
+            error
+        };
+
+        enum class Priority{
+            normal,
+            low
+        };
+
+        using tags_t = std::vector<std::string>;
+
+    private:
+        std::string title_;
+        std::string text_;
+        unsigned int timestamp_{0};
+        std::string hostname_;
+        std::string aggregation_Key_;
+        Priority priority_ {Priority::normal};
+        std::string source_type_name_;
+        Type type_ {Type::info};
+        tags_t tags_;
+
+    public:
+        Event(std::string title, std::string text, Type type = Type::info, tags_t tags = tags_t{});
+
+        void set_timestamp(unsigned int timestamp){ timestamp_ = timestamp; }
+        void set_hostname(std::string hostname){ hostname_ = hostname; }
+        void set_aggregation_Key(std::string aggregation_Key){ aggregation_Key_ = aggregation_Key; }
+        void set_priority(Priority priority){ priority_ = priority; }
+        void set_source_type_name(std::string source_type_name){ source_type_name_ = source_type_name; }
+
+        std::string serialize() const;
+};
+
 struct _StatsdClientData;
 
 class StatsdClient {
@@ -29,6 +68,7 @@ class StatsdClient {
         int count(const std::string& key, size_t value, float sample_rate = 1.0, tags_t = tags_t(0));
         int gauge(const std::string& key, size_t value, float sample_rate = 1.0, tags_t = tags_t(0));
         int timing(const std::string& key, size_t ms, float sample_rate = 1.0, tags_t = tags_t(0));
+        int event(const Event& event);
 
     public:
         /**

@@ -1,0 +1,5 @@
+add_executable(system_monitor system_monitor.cpp)
+target_link_libraries(system_monitor StatsdClient)
+
+add_executable(test_client test_client.cpp)
+target_link_libraries(test_client StatsdClient)
